@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: MIT
+# SPDX-FileCopyrightText: 2019 gfduszynski
+
 import hid
 import math
 from enum import Enum
