@@ -26,6 +26,9 @@ setup(
         'scripts/cm-rgb-gui',
         'scripts/cm-rgb-monitor'
     ],
+    data_files=[
+        ('share/applications', ['data/cm-rgb-gui.desktop']),
+    ],
     long_description=read('README.md'),
     long_description_content_type="text/markdown",
     classifiers=[
