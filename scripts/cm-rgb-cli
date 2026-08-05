@@ -1,183 +1,201 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: MIT
 # SPDX-FileCopyrightText: 2019 gfduszynski
+# This file's hyphenated name is the installed CLI command (cm-rgb-cli); it can't
+# be made snake_case without changing the command users type, so the module-name
+# check is disabled just for this module.
+# pylint: disable=invalid-name
+"""Command line interface for configuring the CM RGB / Wraith Prism controller."""
+# pylint: enable=invalid-name
 
-from cm_rgb.ctrl import LedChannel, LedMode, CMRGBController
+import os
+
 import click
 
+from cm_rgb.ctrl import LedChannel, LedMode, CMRGBController, hex_to_rgb
 
-import click
 
 @click.group(chain=True)
 @click.pass_context
 def setup_group(ctx):
+    """Configure the logo, fan and ring LEDs, then apply the result as one update."""
     ctx.obj = {
-            'ctrl': CMRGBController(),
-            'lChannel': LedChannel.OFF,
-            'fChannel': LedChannel.OFF,
-            'rChannels': [LedChannel.OFF]*15,
-            'mirage': [0,0,0],
-            'save': False
+        'ctrl': CMRGBController(),
+        'logo_channel': LedChannel.OFF,
+        'fan_channel': LedChannel.OFF,
+        'ring_channels': [LedChannel.OFF] * 15,
+        'mirage': [0, 0, 0],
+        'save': False,
     }
-    pass
 
 
 @setup_group.result_callback()
 @click.pass_context
-def setup_finish(ctx,processors):
-    c = ctx.obj['ctrl']
+def setup_finish(ctx, _processors):
+    """Apply the channel configuration collected by the chained subcommands."""
+    ctrl = ctx.obj['ctrl']
 
     # Configure mirage
-    c.enableMirage(*ctx.obj['mirage'])
+    ctrl.enable_mirage(*ctx.obj['mirage'])
 
     # Map LED's
-    c.assign_leds_to_channels(ctx.obj['lChannel'], ctx.obj['fChannel'], *ctx.obj['rChannels'])
+    ctrl.assign_leds_to_channels(ctx.obj['logo_channel'], ctx.obj['fan_channel'], *ctx.obj['ring_channels'])
 
     # Apply above
-    c.apply()
+    ctrl.apply()
 
-    if ctx.obj.get('save',False):
-        c.save()
+    if ctx.obj.get('save', False):
+        ctrl.save()
 
 
 @setup_group.command('logo')
-@click.option('--color','color', default='#00FFFF')
-@click.option('--mode', type=click.Choice(['off', 'static', 'breathe'], case_sensitive=False), default='static')
+@click.option('--color', 'color', default='#00FFFF')
+@click.option(
+    '--mode', type=click.Choice(['off', 'static', 'breathe'], case_sensitive=False), default='static')
 @click.option('--speed', type=click.IntRange(1, 5, clamp=True), default=3)
 @click.option('--brightness', type=click.IntRange(1, 5, clamp=True), default=3)
 @click.pass_context
 def setup_logo(ctx, mode, color, brightness, speed):
-    c = ctx.obj['ctrl']  
+    """Configure the logo LED."""
+    ctrl = ctx.obj['ctrl']
 
-    color = color.lstrip('#')
-    color = [int(color[i:i+2], 16) for i in (0, 2, 4)]
-
-    speed = [0x3C,0x34,0x2c,0x20,0x18][speed-1]
-
-    brightness = [0x33,0x66,0x99,0xCC,0xFF][brightness-1]
+    color = hex_to_rgb(color)
+    speed = [0x3C, 0x34, 0x2c, 0x20, 0x18][speed - 1]
+    brightness = [0x33, 0x66, 0x99, 0xCC, 0xFF][brightness - 1]
 
     if mode != 'off':
-        c.set_channel(LedChannel.LOGO, LedMode[mode.upper()], brightness, color[0], color[1], color[2], speed)
-        ctx.obj['lChannel'] = LedChannel.LOGO
+        ctrl.set_channel(
+            LedChannel.LOGO, LedMode[mode.upper()], brightness, color[0], color[1], color[2], speed)
+        ctx.obj['logo_channel'] = LedChannel.LOGO
 
 
 @setup_group.command('fan')
-@click.option('--color','color', default='#00FFFF')
-@click.option('--mode', type=click.Choice(['off', 'static', 'breathe'], case_sensitive=False), default='static')
+@click.option('--color', 'color', default='#00FFFF')
+@click.option(
+    '--mode', type=click.Choice(['off', 'static', 'breathe'], case_sensitive=False), default='static')
 @click.option('--speed', type=click.IntRange(1, 5, clamp=True), default=3)
 @click.option('--brightness', type=click.IntRange(1, 5, clamp=True), default=3)
-@click.option('--mirage-red-freq',   type=click.IntRange(3, 32768, clamp=True))
+@click.option('--mirage-red-freq', type=click.IntRange(3, 32768, clamp=True))
 @click.option('--mirage-green-freq', type=click.IntRange(3, 32768, clamp=True))
-@click.option('--mirage-blue-freq',  type=click.IntRange(3, 32768, clamp=True))
+@click.option('--mirage-blue-freq', type=click.IntRange(3, 32768, clamp=True))
 @click.pass_context
+# pylint: disable-next=too-many-arguments,too-many-positional-arguments
 def setup_fan(ctx, mode, color, brightness, speed, mirage_red_freq, mirage_green_freq, mirage_blue_freq):
-    c = ctx.obj['ctrl']  
+    """Configure the fan LED, optionally with the mirage fan-speed-strobe effect."""
+    ctrl = ctx.obj['ctrl']
 
-    color = color.lstrip('#')
-    color = [int(color[i:i+2], 16) for i in (0, 2, 4)]
-
-    speed = [0x3C,0x34,0x2c,0x20,0x18][speed-1]
-
-    brightness = [0x33,0x66,0x99,0xCC,0xFF][brightness-1]
+    color = hex_to_rgb(color)
+    speed = [0x3C, 0x34, 0x2c, 0x20, 0x18][speed - 1]
+    brightness = [0x33, 0x66, 0x99, 0xCC, 0xFF][brightness - 1]
 
     if mode != 'off':
-        c.set_channel(LedChannel.FAN, LedMode[mode.upper()], brightness, color[0], color[1], color[2], speed)
-        ctx.obj['fChannel'] = LedChannel.FAN
+        ctrl.set_channel(
+            LedChannel.FAN, LedMode[mode.upper()], brightness, color[0], color[1], color[2], speed)
+        ctx.obj['fan_channel'] = LedChannel.FAN
         ctx.obj['mirage'] = [mirage_red_freq or 0, mirage_green_freq or 0, mirage_blue_freq or 0]
 
 
 @setup_group.command('ring')
-@click.option('--color','color', default='#00FFFF')
-@click.option('--mode', type=click.Choice(['off', 'static', 'breathe', 'swirl','rainbow','cycle'], case_sensitive=False), default='static')
+@click.option('--color', 'color', default='#00FFFF')
+@click.option(
+    '--mode',
+    type=click.Choice(['off', 'static', 'breathe', 'swirl', 'rainbow', 'cycle'], case_sensitive=False),
+    default='static')
 @click.option('--speed', type=click.IntRange(1, 5, clamp=True), default=3)
 @click.option('--brightness', type=click.IntRange(1, 5, clamp=True), default=3)
 @click.pass_context
 def setup_ring(ctx, mode, color, brightness, speed):
-    c = ctx.obj['ctrl']  
+    """Configure the ring LEDs."""
+    ctrl = ctx.obj['ctrl']
 
-    color = color.lstrip('#')
-    color = [int(color[i:i+2], 16) for i in (0, 2, 4)]
+    color = hex_to_rgb(color)
 
-    
     if mode == 'cycle':
-        speed = [0x72,0x68,0x64,0x62,0x61][speed-1]
-        brightness = [0x10,0x20,0x40,0x60,0x7F][brightness-1]
+        speed = [0x72, 0x68, 0x64, 0x62, 0x61][speed - 1]
+        brightness = [0x10, 0x20, 0x40, 0x60, 0x7F][brightness - 1]
     elif mode == 'rainbow':
-        speed = [0x72,0x68,0x64,0x62,0x61][speed-1]
-        brightness = [0x16,0x33,0x66,0x88,0xFF][brightness-1]
+        speed = [0x72, 0x68, 0x64, 0x62, 0x61][speed - 1]
+        brightness = [0x16, 0x33, 0x66, 0x88, 0xFF][brightness - 1]
     elif mode == 'swirl':
-        speed = [0x90,0x85,0x77,0x74,0x70][speed-1]
-        brightness = [0x33,0x66,0x99,0xCC,0xFF][brightness-1]
-    else:    
-        speed = [0x3C,0x34,0x2c,0x20,0x18][speed-1]
-        brightness = [0x33,0x66,0x99,0xCC,0xFF][brightness-1]
+        speed = [0x90, 0x85, 0x77, 0x74, 0x70][speed - 1]
+        brightness = [0x33, 0x66, 0x99, 0xCC, 0xFF][brightness - 1]
+    else:
+        speed = [0x3C, 0x34, 0x2c, 0x20, 0x18][speed - 1]
+        brightness = [0x33, 0x66, 0x99, 0xCC, 0xFF][brightness - 1]
 
     if mode == 'cycle':
-        c.set_channel(LedChannel.R_CYCLE, LedMode.CYCLE, brightness, color[0], color[1], color[2], speed)
-        ctx.obj['rChannels'] = [LedChannel.R_CYCLE]*15
+        ctrl.set_channel(
+            LedChannel.R_CYCLE, LedMode.CYCLE, brightness, color[0], color[1], color[2], speed)
+        ctx.obj['ring_channels'] = [LedChannel.R_CYCLE] * 15
 
     elif mode == 'rainbow':
-        c.set_channel(LedChannel.R_RAINBOW, LedMode.R_RAINBOW, brightness, color[0], color[1], color[2], speed)
-        ctx.obj['rChannels'] = [LedChannel.R_RAINBOW]*15
+        ctrl.set_channel(
+            LedChannel.R_RAINBOW, LedMode.R_RAINBOW, brightness, color[0], color[1], color[2], speed)
+        ctx.obj['ring_channels'] = [LedChannel.R_RAINBOW] * 15
 
     elif mode == 'static':
-        c.set_channel(LedChannel.R_STATIC, LedMode.R_DEFAULT, brightness, color[0], color[1], color[2], speed)
-        ctx.obj['rChannels'] = [LedChannel.R_STATIC]*15
+        ctrl.set_channel(
+            LedChannel.R_STATIC, LedMode.R_DEFAULT, brightness, color[0], color[1], color[2], speed)
+        ctx.obj['ring_channels'] = [LedChannel.R_STATIC] * 15
 
     elif mode == 'breathe':
-        c.set_channel(LedChannel.R_BREATHE, LedMode.R_DEFAULT, brightness, color[0], color[1], color[2], speed)
-        ctx.obj['rChannels'] = [LedChannel.R_BREATHE]*15
+        ctrl.set_channel(
+            LedChannel.R_BREATHE, LedMode.R_DEFAULT, brightness, color[0], color[1], color[2], speed)
+        ctx.obj['ring_channels'] = [LedChannel.R_BREATHE] * 15
 
     elif mode == 'swirl':
-        c.set_channel(LedChannel.R_SWIRL, LedMode.R_DEFAULT, brightness, color[0], color[1], color[2], speed)
-        ctx.obj['rChannels'] = [LedChannel.R_SWIRL]*15
+        ctrl.set_channel(
+            LedChannel.R_SWIRL, LedMode.R_DEFAULT, brightness, color[0], color[1], color[2], speed)
+        ctx.obj['ring_channels'] = [LedChannel.R_SWIRL] * 15
 
 
 @setup_group.command('save')
 @click.pass_context
 def save(ctx):
+    """Persist the applied configuration to the device's onboard memory."""
     ctx.obj['save'] = True
 
 
 @click.group()
-@click.pass_context
-def main_group(ctx):
-    pass
+def main_group():
+    """CM RGB command line interface."""
 
 
 @main_group.command('restore')
-@click.pass_context
-def restore(ctx):
+def restore():
+    """Reset the device back to its onboard-saved configuration."""
     CMRGBController().restore()
 
 
 @main_group.command('version')
-@click.pass_context
-def version(ctx):
-    print(CMRGBController().getVersion())
+def version():
+    """Print the device's firmware version."""
+    print(CMRGBController().get_version())
 
 
 @main_group.command('add-udev-rule')
-@click.pass_context
-def add_udev_rule(ctx):
-    import os
-    rule = "SUBSYSTEM==\"usb\", ATTR{idVendor}==\"2516\", ATTR{idProduct}==\"0051\", TAG+=\"uaccess\", TAG+=\"udev-acl\""
+def add_udev_rule():
+    """Install a udev rule granting unprivileged access to the device."""
+    rule = ('SUBSYSTEM=="usb", ATTR{idVendor}=="2516", ATTR{idProduct}=="0051", '
+            'TAG+="uaccess", TAG+="udev-acl"')
     if os.geteuid() == 0:
-        try: 
-            with open("/etc/udev/rules.d/60-cm-rgb.rules","w") as f:
-                f.write(rule)
-                print("Created /etc/udev/rules.d/60-cm-rgb.rules")
-                print("udev should apply new rule automatically. If not, try running 'sudo udevadm trigger'.")
-        
-        except:
+        try:
+            with open("/etc/udev/rules.d/60-cm-rgb.rules", "w", encoding="utf-8") as rule_file:
+                rule_file.write(rule)
+            print("Created /etc/udev/rules.d/60-cm-rgb.rules")
+            print("udev should apply new rule automatically. If not, try running 'sudo udevadm trigger'.")
+        except OSError:
             print("Failed to create /etc/udev/rules.d/60-cm-rgb.rules")
             raise
     else:
-        print("This command must be run as root in order to create udev rule. (sudo cm-rgb-cli add-udev-rule)")
-        print("You can also do this manually by creating /etc/udev/rules.d/60-cm-rgb.rules with following content:")
+        print("This command must be run as root in order to create udev rule. "
+              "(sudo cm-rgb-cli add-udev-rule)")
+        print("You can also do this manually by creating /etc/udev/rules.d/60-cm-rgb.rules "
+              "with following content:")
         print(rule)
 
-main_group.add_command(setup_group,'set')
+
+main_group.add_command(setup_group, 'set')
 
 if __name__ == '__main__':
-    main_group()
+    main_group()  # pylint: disable=no-value-for-parameter

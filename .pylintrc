@@ -1,0 +1,16 @@
+[MAIN]
+# hidapi's `hid` module is a compiled C extension with no introspectable
+# source, so pylint can't see hid.enumerate/hid.device and would otherwise
+# report false-positive c-extension-no-member warnings for it.
+extension-pkg-allow-list=hid
+
+[FORMAT]
+max-line-length=110
+
+[TYPECHECK]
+# PyGObject's gi.repository classes (Gtk, Gdk, ...) are generated at import
+# time via GObject introspection, not real Python source, so pylint/astroid
+# can't see their members at all and reports false-positive no-member errors
+# for e.g. Gtk.Window methods. This is the standard workaround recommended
+# by PyGObject/pylint for this.
+ignored-modules=gi.repository

@@ -1,15 +1,15 @@
 # SPDX-License-Identifier: MIT
 # SPDX-FileCopyrightText: 2019 gfduszynski
+"""Packaging metadata for cm_rgb."""
 
 import os
 from setuptools import setup
 
-# Utility function to read the README file.
-# Used for the long_description.  It's nice, because now 1) we have a top level
-# README file and 2) it's easier to type in the README file than to put a raw
-# string in below ...
+
 def read(fname):
-    return open(os.path.join(os.path.dirname(__file__), fname)).read()
+    """Read a file relative to this setup.py, for use as the long description."""
+    with open(os.path.join(os.path.dirname(__file__), fname), encoding="utf-8") as f:
+        return f.read()
 
 setup(
     name = "cm_rgb",
