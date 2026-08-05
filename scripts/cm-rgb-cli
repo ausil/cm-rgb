@@ -20,7 +20,7 @@ def setup_group(ctx):
     pass
 
 
-@setup_group.resultcallback()
+@setup_group.result_callback()
 @click.pass_context
 def setup_finish(ctx,processors):
     c = ctx.obj['ctrl']
