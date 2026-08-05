@@ -62,32 +62,23 @@ class myWindow(Gtk.Window):
         logo_grid.attach(logo_bright, 1,2,1,1)
 
         #Speed
-        global logo_speed
-        global logo_slabel
+        logo_slabel = Gtk.Label(label="Speed: ")
+        logo_grid.attach(logo_slabel, 0,3,1,1)
 
+        logo_speed_value = Gtk.Adjustment(0, 0, 5, 1, 1, 0)
         logo_speed = Gtk.SpinButton()
+        logo_speed.set_adjustment(logo_speed_value)
+        logo_grid.attach(logo_speed, 1,3,1,1)
 
         def updatespeed(x):
-
             if logo_mode.get_active() == 1:
-                global logo_slabel
-                logo_slabel = Gtk.Label(label="Speed: ")
-                logo_grid.attach(logo_slabel, 0,3,1,1)
-
-                global logo_speed
-                speed_value = Gtk.Adjustment(0, 0, 5, 1, 1, 0)
-                logo_speed = Gtk.SpinButton()
-                logo_speed.set_adjustment(speed_value)
-                logo_grid.attach(logo_speed, 1,3,1,1)
-
                 logo_slabel.show()
                 logo_speed.show()
-
             else:
-                logo_speed.hide()
                 logo_slabel.hide()
+                logo_speed.hide()
 
-
+        updatespeed(None)
         logo_mode.connect("changed", updatespeed)
         
         ########FAN########
@@ -130,32 +121,23 @@ class myWindow(Gtk.Window):
         fan_grid.attach(fan_bright, 1,2,1,1)
 
         #Speed
-        global fan_speed
-        global fan_slabel
+        fan_slabel = Gtk.Label(label="Speed: ")
+        fan_grid.attach(fan_slabel, 0,3,1,1)
 
+        fan_speed_value = Gtk.Adjustment(0, 0, 5, 1, 1, 0)
         fan_speed = Gtk.SpinButton()
+        fan_speed.set_adjustment(fan_speed_value)
+        fan_grid.attach(fan_speed, 1,3,1,1)
 
         def updatespeed(x):
-
             if fan_mode.get_active() == 1:
-                global fan_slabel
-                fan_slabel = Gtk.Label(label="Speed: ")
-                fan_grid.attach(fan_slabel, 0,3,1,1)
-
-                global fan_speed
-                speed_value = Gtk.Adjustment(0, 0, 5, 1, 1, 0)
-                fan_speed = Gtk.SpinButton()
-                fan_speed.set_adjustment(speed_value)
-                fan_grid.attach(fan_speed, 1,3,1,1)
-
                 fan_slabel.show()
                 fan_speed.show()
-
             else:
-                fan_speed.hide()
                 fan_slabel.hide()
+                fan_speed.hide()
 
-
+        updatespeed(None)
         fan_mode.connect("changed", updatespeed)
     
 
@@ -201,32 +183,23 @@ class myWindow(Gtk.Window):
         ring_grid.attach(ring_bright, 1,2,1,1)
 
         #Speed
-        global ring_speed
-        global ring_slabel
+        ring_slabel = Gtk.Label(label="Speed: ")
+        ring_grid.attach(ring_slabel, 0,3,1,1)
 
+        ring_speed_value = Gtk.Adjustment(0, 0, 5, 1, 1, 0)
         ring_speed = Gtk.SpinButton()
+        ring_speed.set_adjustment(ring_speed_value)
+        ring_grid.attach(ring_speed, 1,3,1,1)
 
         def updatespeed(x):
-
             if ring_mode.get_active() == 1:
-                global ring_slabel
-                ring_slabel = Gtk.Label(label="Speed: ")
-                ring_grid.attach(ring_slabel, 0,3,1,1)
-
-                global ring_speed
-                speed_value = Gtk.Adjustment(0, 0, 5, 1, 1, 0)
-                ring_speed = Gtk.SpinButton()
-                ring_speed.set_adjustment(speed_value)
-                ring_grid.attach(ring_speed, 1,3,1,1)
-
                 ring_slabel.show()
                 ring_speed.show()
-
             else:
-                ring_speed.hide()
                 ring_slabel.hide()
+                ring_speed.hide()
 
-
+        updatespeed(None)
         ring_mode.connect("changed", updatespeed)
         
 
